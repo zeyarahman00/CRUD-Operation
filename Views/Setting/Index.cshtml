@@ -1,0 +1,221 @@
+﻿
+
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<style>
+    table th {
+        padding: 5px 5px !important;
+        white-space: nowrap;
+    }
+
+    table td {
+        padding: 3px 5px !important;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="font-weight-bold"><i class="fas fa-cog mx-2"></i>Settings</h5>
+            </div>
+            <div class="col-md-4">
+                <div class="float-end float-lg-right">
+                    <button type="button" onclick="dataForm()" class="btn btn-sm btn-success"><i class="fa fa-plus mx-2"></i>Add New</button>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-danger btn-sm"><i class="fa fa-undo mx-2"></i>Go Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="tblGrid" class="table table-bordered table-striped text-sm">
+            <thead class="bg-info text-white">
+                <tr>
+                    <th>SNo.</th>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Value2</th>
+                    <th class="w-100">Description</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody id="data-content">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="dataModal" tabindex="-1" aria-labelledby="dataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dataModalLabel"><i class="fa fa-cog mx-2"></i>Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="data-form">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"  for="Key">Key</label>
+                        <input type="text" id="Key" name="Key" placeholder="Key" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"  for="Value">Value</label>
+                        <input type="text" id="Value" name="Value" placeholder="Value" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"  for="Value2">Value2</label>
+                        <input type="text" id="Value2" name="Value2" placeholder="Value2" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"  for="Description">Description</label>
+                        <textarea id="Description" name="Description" placeholder="Description" class="form-control" rows="5" style="resize:none"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="Id" value="0" />
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal"><i class="fa fa-times"></i> Close</button>
+                    <button type="button" onclick="addData()" class="btn btn-primary btn-sm"><i class="fa fa-save mx-2"></i><span class="action-btn">Submit</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@*setting modal end*@
+
+<link rel="stylesheet" href="~/css/dataTables.bootstrap4.min.css" />
+<link rel="stylesheet" href="~/css/responsive.bootstrap4.min.css" />
+
+@section Scripts {
+    <script type="text/javascript" src="~/plugins/datatables/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="~/plugins/datatables-bs4/js/dataTables.bootstrap4.js"></script>
+    <script type="text/javascript" src="~/plugins/datatables-responsive/js/dataTables.responsive.js"></script>
+    <script type="text/javascript" src="~/plugins/datatables-responsive/js/responsive.bootstrap4.js"></script>
+
+    
+    <script type="text/javascript">
+
+        function dataForm() {
+            $('#data-form').trigger("reset");
+            $('.action-btn').text("Submit");
+            $('#dataModal').modal("show");
+        }
+
+        function addData() {
+            var Id = $('#Id').val();
+            var Key = $('#Key').val();
+            var Value = $('#Value').val();
+            var Value2 = $('#Value2').val();
+            var Description = $('#Description').val();
+            $.ajax({
+                url: "@Url.Action("AddSetting", "Setting")",
+                type: "POST",
+                data: { Id: Id, Key: Key, Value: Value, Value2: Value2, Description: Description},
+                success: function (data) {
+                    if (data.Status == 1) {
+                        toastr.success(data.Message);
+                        $('#dataModal').modal("hide");
+                        $('#Id').val(0)
+                    }
+                    else {
+                        toastr.error(data.Message);
+                    }
+                    grid.ajax.reload();
+                }
+            });
+        }
+
+        var grid;
+        $(function () {
+            grid = $('#tblGrid').DataTable({
+                processing: true,
+                ajax: {
+                    url: "@Url.Action("Settings", "Setting")",
+                    type: "GET"
+                },
+                columns: [
+                    {
+                        title: 'Sr. No.'
+                    },
+                    {
+                        data: 'Key',
+                        title: 'Key'
+                    },
+                    {
+                        data: 'Value',
+                        title: 'Value'
+                    },
+                    {
+                        data: 'Value2',
+                        title: 'Value2'
+                    },
+                    {
+                        data: 'Description',
+                        title: 'Description'
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, item) {
+                            var action = '<button type="button" onclick="editData(' + data.Id + ')" class="btn btn-sm btn-primary py-0"><i class="fa fa-edit mx-2"></i>Edit</button> ';
+                            action += '<button type="button" onclick="deleteData(' + data.Id + ')" class="btn btn-sm btn-danger py-0"><i class="fa fa-trash mx-2"></i>Delete</button>';
+                            return action;
+                        },
+                        orderable: false,
+
+                    }
+                ],
+                columnDefs: [{
+                    targets: 0,
+                    render: function (data, type, row, meta) {
+                        return meta.row + 1;
+                    }
+                }],
+            });
+        });
+
+        function deleteData(Id) {
+            var ans = confirm("Are you sure you want to delete?");
+            if (ans) {
+                $.ajax({
+                    url: "@Url.Action("DeleteSetting", "Setting")",
+                    type: "DELETE",
+                    data: { Id: Id },
+                    success: function (data) {
+                        if (data.Status == 1) {
+                            toastr.success(data.Message);
+                        }
+                        else {
+                            toastr.error(data.Message);
+                        }
+                        grid.ajax.reload();
+                    }
+                });
+            }
+        }
+
+        function editData(Id) {
+            $.ajax({
+                url: "@Url.Action("EditSetting", "Setting")",
+                type: "POST",
+                data: { Id: Id },
+                success: function (data) {
+                    $('#Key').val(data.Key);
+                    $('#Value').val(data.Value);
+                    $('#Value2').val(data.Value2);
+                    $('#Description').val(data.Description);
+                    $('#Id').val(data.Id);
+                    $('.action-btn').text("Update");
+                    $('#dataModal').modal("show");
+                }
+            });
+        }
+
+    </script>
+}
+
